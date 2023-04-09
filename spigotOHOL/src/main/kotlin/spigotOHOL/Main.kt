@@ -21,6 +21,9 @@ import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.event.player.AsyncPlayerChatEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
+import org.bukkit.event.player.PlayerInteractEntityEvent
+import org.bukkit.event.player.PlayerToggleSneakEvent
+import org.bukkit.entity.EntityType
 
 public class FamilyAndHuman(public val family: Family, public val human: Human) {
 
@@ -65,7 +68,7 @@ public class Main: JavaPlugin(),Listener {
               + (it.player.location.block.lightLevel - (it.player.world.time / 4) / 6000.0 * 15.0).toDouble() / 24.0
             )
             if (it.hunglyTime % 60 == 0){
-              it.player.damage(2.toDouble() + Math.abs(temprature))
+              it.player.damage((2.toDouble() + Math.abs(temprature)) / 2)
               it.hunglyTime = 0
             }
             it.player.setHealthScale(Math.min(it.healthMeterSize.toDouble(), 20.0))
@@ -174,5 +177,24 @@ public class Main: JavaPlugin(),Listener {
   @EventHandler
   public fun onFoodLevelChange(event: FoodLevelChangeEvent): Unit {
     event.entity.setHealth(Math.floor(event.entity.getHealth() + ((event.foodLevel - event.entity.foodLevel) / 1.5).toDouble()))
+  }
+
+  @EventHandler
+  public fun oEntityInteract(event: PlayerInteractEntityEvent): Unit {
+    if (event.rightClicked.type == EntityType.PLAYER){
+      val tuple = this.familieMap.get(event.rightClicked.getUniqueId()) ?: return
+      if (tuple.human.age <= 5){
+        event.player.addPassenger(event.rightClicked)
+      }
+    }
+  }
+
+  @EventHandler
+  public fun onPlayerSneak(event: PlayerToggleSneakEvent): Unit {
+    if (event.isSneaking){
+      val self = this
+      val passenger = event.player.passengers.find { it.type == EntityType.PLAYER && self.familieMap.get(it.getUniqueId()) != null } ?: return
+      event.player.removePassenger(passenger)
+    }
   }
 }
