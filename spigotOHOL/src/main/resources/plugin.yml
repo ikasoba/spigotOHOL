@@ -1,0 +1,4 @@
+main: spigotOHOL.Main
+name: spigotOHOL
+version: 0.1.0
+api-version: 1.19
